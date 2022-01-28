@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
+    if links == None:
+        return list()
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
@@ -27,7 +29,6 @@ def extract_next_links(url, resp):
     s = set()
     if resp.status/100 == 2:
         soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-        #urls = []
         for link in soup.find_all('a'):
             print(f'LINK: {link.get("href")}')
             if link.get('href') != None:
@@ -35,11 +36,11 @@ def extract_next_links(url, resp):
                 #unfragmented = link.get('href').split('#')[0]
                 unfragmented = link.get('href')
                 #print(f'UNFRAGMENTED: {unfragmented}')
-                #parsed_url = urlparse(unfragmented)
-                #parsed_url._replace(query="",fragment="").geturl()
-                #print(f'PARSED: {parsed_url}')
-                #s.add(parsed_url)
-                s.add(unfragmented)
+                unparsed = urlparse(unfragmented)
+                parsed_url = unparsed._replace(query="",fragment="").geturl()
+                print(f'PARSED: {unparsed}')
+                s.add(parsed_url)
+                #s.add(unfragmented)
         return list(s)
     
 

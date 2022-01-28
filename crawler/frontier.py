@@ -15,7 +15,9 @@ class Frontier(object):
         self.downloaded_urls = set()
         self.output = open("output.txt", "a")
         self.unique = open("unique_urls.txt", "a")
+        self.ics_subdomains = open("unique_urls.txt", "a")
         self.save_file = self.config.save_file + ".bak"
+        counter = 0
         
         if not os.path.exists(self.config.save_file) and not restart:
             # Save file does not exist, but request to load save.
