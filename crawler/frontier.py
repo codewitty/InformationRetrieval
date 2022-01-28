@@ -5,9 +5,12 @@ from threading import Thread, RLock
 from queue import Queue, Empty
 
 from utils import get_logger, get_urlhash, normalize
-from scraper import is_valid
+from scraper import is_valid, checkEnglish, tokenize, wordFreq, printFreq
+from urllib.parse import urlparse
 
+        
 class Frontier(object):
+    
     def __init__(self, config, restart):
         self.logger = get_logger("FRONTIER")
         self.config = config
@@ -17,6 +20,7 @@ class Frontier(object):
         self.unique = open("unique_urls.txt", "a")
         self.ics_subdomains = open("unique_urls.txt", "a")
         self.save_file = self.config.save_file + ".bak"
+        
         counter = 0
         
         if not os.path.exists(self.config.save_file) and not restart:
@@ -67,6 +71,8 @@ class Frontier(object):
         urlhash = get_urlhash(url)
         if urlhash not in self.save:
             self.save[urlhash] = (url, False)
+            unique_parse = urlparse(url)
+            
             self.save.sync()
             self.output.write(f'{url}\n')
             self.output.flush()

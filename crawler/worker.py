@@ -5,6 +5,7 @@ from utils.download import download
 from utils import get_logger
 import scraper
 import time
+from bs4 import BeautifulSoup
 
 
 class Worker(Thread):
@@ -12,6 +13,7 @@ class Worker(Thread):
         self.logger = get_logger(f"Worker-{worker_id}", "Worker")
         self.config = config
         self.frontier = frontier
+        self.tokenMap = {}
         # basic check for requests in scraper
         assert {getsource(scraper).find(req) for req in {"from requests import", "import requests"}} == {-1}, "Do not use requests from scraper.py"
         super().__init__(daemon=True)
@@ -32,5 +34,10 @@ class Worker(Thread):
             scraped_urls = scraper.scraper(tbd_url, resp)
             for scraped_url in scraped_urls:
                 self.frontier.add_url(scraped_url)
+                soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+                text_string = soup.get_text()
+                text_tokens = scraper.tokenize(text_string)
+                tokenMap = scraper.wordFreq(text_tokens)
+            scraper.printFreq(tokenMap)
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
