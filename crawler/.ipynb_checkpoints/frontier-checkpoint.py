@@ -12,24 +12,31 @@ class Frontier(object):
         self.logger = get_logger("FRONTIER")
         self.config = config
         self.to_be_downloaded = list()
+        self.downloaded_urls = set()
+        self.output = open("output.txt", "a")
+        self.unique = open("unique_urls.txt", "a")
+        self.save_file = self.config.save_file + ".bak"
         
         if not os.path.exists(self.config.save_file) and not restart:
             # Save file does not exist, but request to load save.
             self.logger.info(
                 f"Did not find save file {self.config.save_file}, "
                 f"starting from seed.")
-        elif os.path.exists(self.config.save_file) and restart:
+        elif os.path.exists(self.save_file) and restart:
             # Save file does exists, but request to start from seed.
             self.logger.info(
                 f"Found save file {self.config.save_file}, deleting it.")
-            os.remove(self.config.save_file)
+            #os.remove(self.config.save_file)
+            os.remove(self.save_file)
+            os.remove("frontier.shelve.dat")
+            os.remove("frontier.shelve.dir")
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
         if restart:
             for url in self.config.seed_urls:
                 self.add_url(url)
         else:
-            # Set the frontier state with contents of save file.
+            # Set the frontier state with contents of save file .
             self._parse_save_file()
             if not self.save:
                 for url in self.config.seed_urls:
@@ -59,6 +66,9 @@ class Frontier(object):
         if urlhash not in self.save:
             self.save[urlhash] = (url, False)
             self.save.sync()
+            self.output.write(f'{url}\n')
+            self.output.flush()
+            self.downloaded_urls.add(url)
             self.to_be_downloaded.append(url)
     
     def mark_url_complete(self, url):
