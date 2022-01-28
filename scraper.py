@@ -80,18 +80,13 @@ def extract_next_links(url, resp):
             #if div.get("id" == "data-date"):
                 #continue
         for link in soup.find_all('a'):
-            print(f'LINK: {link.get("href")}')
+            #print(f'LINK: {link.get("href")}')
             if link.get('href') != None:
-
-                #text_tokens = [t for t in text_tokens if not re.match('[' + string.punctuation + ']+', t)]
-
-                print(f'LINK: {link.get("href")}')
+                #print(f'LINK: {link.get("href")}')
                 unfragmented = link.get('href')
                 unparsed = urlparse(unfragmented)
-                parsed_url = unparsed._replace(query="",fragment="").geturl()
-                if re.match("/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/", unparsed.path.lower()):
-                    continue
-                print(f'PARSED: {unparsed}')
+                parsed_url = unparsed._replace(query="",fragment="").geturl()  
+                #print(f'PARSED: {unparsed}')
                 s.add(parsed_url)
                 #s.add(unfragmented)
         return list(s)
@@ -107,6 +102,9 @@ def is_valid(url):
         try:
             parsed = urlparse(url)
             if parsed.scheme not in set(["http", "https"]) or ('files/' in url):
+                return False
+            if re.match("/^\d{4}-\d{2}-\d{2}$/", parsed.path.lower()):
+                print("INSIDE REGEX!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 return False
             return not re.match(
                 r".*\.(css|js|bmp|gif|jpe?g|ico"
