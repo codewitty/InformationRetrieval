@@ -1,6 +1,9 @@
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+import nltk
+from nltk.corpus import stopwords 
+from nltk.tokenize import RegexpTokenizer
 
 
 tokenMap = {}
@@ -8,7 +11,7 @@ tokenMap = {}
 stop_words=["a","about","above","after","again","against","all","am","an","and","any","are","arent","as","at","be","because","been","before","being","below","between","both","but","by","cant","cannot","could","couldnt","did","didnt","do","does","doesnt","doing","dont","down","during","each","few","for","from","further","had","hadnt","has","hasnt","have","havent","having","he","hed","hell","hes","her","here","heres","hers","herself","him","himself","his","how","hows","i","id","ill","im","ive","if","in","into","is","isnt","it","its","its","itself","lets","me","more","most","mustnt","my","myself","no","nor","not","of","off","on","once","only","or","other","ought","our","ours","ourselves","out","over","own","same","shant","she","shed","shell","shes","should","shouldnt","so","some","such","than","that","thats","the","their","theirs","them","themselves","then","there","theres","these","they","theyd","theyll","theyre","theyve","this","those","through","to","too","under","until","up","very","was","wasnt","we","wed","well","were","weve","were","werent","what","whats","when","whens","where","wheres","which","while","who","whos","whom","why","whys","with","wont","would","wouldnt","you","youd","youll","youre","youve","your","yours","yourself","yourselves"]
 repeat_url = []
 
-# Encodes one character at a time, hence O(n) complexity
+
 def checkEnglish(str):
     try:
         str.encode('ascii')
@@ -16,9 +19,24 @@ def checkEnglish(str):
         return False
     else:
         return True
+    
+def tolkeinizer(fileString): 
+    
+    #imported nlkt in an attempt to filter utilize its stopwords and tokenizing function
+    
+    #used RegexpTokenizer function from nltk that will tokenize things based on them being (an) alphanumeric character(s)
+    tokenizer = RegexpTokenizer(r'\w+')
+    
+    #tokenizer uses NLTK's tokenize function in order to get the tokens from the string being passed in (string being the contents of the file)
+    tokenizedList = tokenizer.tokenize(str(fileString))
+    
+    #filtering out the english stopwords from list of tokens tokenizer.tokenize() returned. 
+    tokenizedList = [token for token in tokenizedList if token not in stopwords.words("english")]
+    
+    #returning finalized list of tokens that do not include stopwords
+    return tokenizedList
 
-# O(n) average time for re.findall where n is number of words, 
-# Inside the for loop: O(n) for checkEnglish + O(n) for lower + O(n) for re.sub
+
 def tokenize(somestring):
     tokenList = []
     newline = somestring.rstrip()
@@ -33,7 +51,21 @@ def tokenize(somestring):
         tokenList.append(word)
     return tokenList
 
-# Processes one word at a time, O(n) complexity
+def maxWords(somestring):
+    maxWordCount = 0
+    newline = somestring.rstrip()
+    string = list(re.findall('([^-_\s\'\t\.]+)', newline))                
+    for word in string:
+        if not checkEnglish(word):
+            continue
+        word = word.lower()
+        word = re.sub(r"[^a-zA-Z0-9]","",word)
+        if word == "":
+            continue
+        maxWordCount+=1
+    return maxWordCount
+
+
 def wordFreq(tokenList):
     tokenMap = {}
     for word in tokenList:
@@ -43,7 +75,7 @@ def wordFreq(tokenList):
             tokenMap[word] = 1
     return tokenMap
 
-# Average time complexity is O(n log n) for sorting + O(n) to print n tokens
+
 def printFreq(tokenMap):
     orderedTokens = sorted(tokenMap.items(), key=lambda token: token[1], reverse=True)
 
@@ -97,15 +129,19 @@ def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
-    if ('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url):
-        
+    if (('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url)) and (not (r"\d{4}-\d{2}-\d{2}$" in url)) and (not (r"\d{4}-\d{2}$" in url)):
         try:
             parsed = urlparse(url)
             if parsed.scheme not in set(["http", "https"]) or ('files/' in url):
                 return False
-            if re.match("/^\d{4}-\d{2}-\d{2}$/", parsed.path.lower()):
-                print("INSIDE REGEX!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            """
+            if re.findall(r"\d{4}-\d{2}-\d{2}$", parsed.path.lower()):
+                print("INSIDE REGEX YY/MM/DD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 return False
+            if re.findall(r"\d{4}-\d{2}$", parsed.path.lower()):
+                print("INSIDE REGEX YY/MM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                return False
+            """
             return not re.match(
                 r".*\.(css|js|bmp|gif|jpe?g|ico"
                 + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -120,8 +156,4 @@ def is_valid(url):
             print ("TypeError for ", parsed)
             raise
     else:
-        return False
-    
-    
-
-    
+        return False    

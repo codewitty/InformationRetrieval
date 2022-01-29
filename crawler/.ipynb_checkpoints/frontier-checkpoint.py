@@ -16,9 +16,8 @@ class Frontier(object):
         self.config = config
         self.to_be_downloaded = list()
         self.downloaded_urls = set()
-        self.output = open("output.txt", "a")
-        self.unique = open("unique_urls.txt", "a")
-        self.ics_subdomains = open("unique_urls.txt", "a")
+        self.output = open("output/output.txt", "a")
+        self.unique = open("output/unique_urls.txt", "a")
         self.save_file = self.config.save_file + ".bak"
         
         counter = 0
@@ -33,9 +32,13 @@ class Frontier(object):
             self.logger.info(
                 f"Found save file {self.config.save_file}, deleting it.")
             #os.remove(self.config.save_file)
-            os.remove(self.save_file)
             os.remove("frontier.shelve.dat")
             os.remove("frontier.shelve.dir")
+            #os.remove("output/unique_urls.txt")
+            #os.remove("output/content.txt")
+            #os.remove("output/output.txt")
+            #os.remove("output/maxWordFile.txt")
+            
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
         if restart:
@@ -72,7 +75,10 @@ class Frontier(object):
         if urlhash not in self.save:
             self.save[urlhash] = (url, False)
             unique_parse = urlparse(url)
-            
+            u_str = unique_parse.netloc
+            if "ics" in u_str:
+                self.unique.write(f'{url}\n')
+                self.unique.flush()
             self.save.sync()
             self.output.write(f'{url}\n')
             self.output.flush()
