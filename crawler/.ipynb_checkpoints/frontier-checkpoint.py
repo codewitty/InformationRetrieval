@@ -31,7 +31,7 @@ class Frontier(object):
             # Save file does exists, but request to start from seed.
             self.logger.info(
                 f"Found save file {self.config.save_file}, deleting it.")
-            #os.remove(self.config.save_file)
+            os.remove(self.save_file)
             os.remove("frontier.shelve.dat")
             os.remove("frontier.shelve.dir")
             #os.remove("output/unique_urls.txt")

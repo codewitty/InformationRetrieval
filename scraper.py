@@ -129,7 +129,7 @@ def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
-    if (('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url)) and (not (r"\d{4}-\d{2}-\d{2}$" in url)) and (not (r"\d{4}-\d{2}$" in url)):
+    if (('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url)) and ((not (r"\d{4}-\d{2}-\d{2}$" in url)) or (not (r"\d{4}-\d{2}$" in url))):
         try:
             parsed = urlparse(url)
             if parsed.scheme not in set(["http", "https"]) or ('files/' in url):

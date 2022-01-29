@@ -1,22 +1,33 @@
 from threading import Thread
-
+import datetime
 from inspect import getsource
 from utils.download import download
 from utils import get_logger
 import scraper
 import time
+import pytz
+from pytz import timezone
 from bs4 import BeautifulSoup
 
 
 class Worker(Thread):
     def __init__(self, worker_id, config, frontier):
+        # Time stamp snippet
+        utc = datetime.datetime.now(tz=pytz.utc)
+        current = utc.astimezone(timezone('US/Pacific'))
+        # Set config variables
         self.logger = get_logger(f"Worker-{worker_id}", "Worker")
         self.config = config
         self.frontier = frontier
+        # Output data collection variables
         self.tokenMap = {}
         self.content = open("output/content.txt", "a")
         self.tolkein_content = open("output/tolkein_content.txt", "a")
+        # Open max word file to track words in text content per page
         self.maxWordFile = open("output/maxWordFile.txt", "a")
+        # Time stamp at the top
+        self.maxWordFile.write(f'Crawler Start time: {current}\n')
+        self.maxWordFile.flush()
         # basic check for requests in scraper
         assert {getsource(scraper).find(req) for req in {"from requests import", "import requests"}} == {-1}, "Do not use requests from scraper.py"
         super().__init__(daemon=True)
@@ -31,7 +42,7 @@ class Worker(Thread):
                 self.frontier.unique.flush()
                 break
             resp = download(tbd_url, self.config, self.logger)
-            if resp.raw_response is not None:
+            if resp.raw_response is not None and scraper.is_valid(tbd_url):
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
                 #text_string = soup.get_text()
                 text_string = soup.get_text(strip = True)
