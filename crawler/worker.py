@@ -31,12 +31,7 @@ class Worker(Thread):
                 self.frontier.unique.flush()
                 break
             resp = download(tbd_url, self.config, self.logger)
-            self.logger.info(
-                f"Downloaded {tbd_url}, status <{resp.status}>, "
-                f"using cache {self.config.cache_server}.")
-            scraped_urls = scraper.scraper(tbd_url, resp)
-            for scraped_url in scraped_urls:
-                self.frontier.add_url(scraped_url)
+            if resp.raw_response is not None:
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
                 #text_string = soup.get_text()
                 text_string = soup.get_text(strip = True)
@@ -44,19 +39,23 @@ class Worker(Thread):
                 text_tokens = scraper.tokenize(text_string)
                 tolkein_tokens = scraper.tolkeinizer(text_string)
                 #max_words = scraper.maxWords(text_string)
-                self.maxWordFile.write(f'{scraped_url} {max_words}\n')
+                self.maxWordFile.write(f'{tbd_url} {max_words}\n')
                 self.maxWordFile.flush()
                 tokenMap = scraper.wordFreq(text_tokens)
                 tolkeinMap = scraper.wordFreq(tolkein_tokens)
-                
-                
-            orderedTokens = sorted(tokenMap.items(), key=lambda token: token[1], reverse=True)
-            orderedTolkeins = sorted(tolkeinMap.items(), key=lambda token: token[1], reverse=True)
-            for i in orderedTokens:
-                self.content.write(f'{i[0]} {i[1]}\n')
-            for i in orderedTolkeins:
-                self.tolkein_content.write(f'{i[0]} {i[1]}\n')
-            self.content.flush()
-            self.tolkein_content.flush()
+                orderedTokens = sorted(tokenMap.items(), key=lambda token: token[1], reverse=True)
+                orderedTolkeins = sorted(tolkeinMap.items(), key=lambda token: token[1], reverse=True)
+                for i in orderedTokens:
+                    self.content.write(f'{i[0]} {i[1]}\n')
+                for i in orderedTolkeins:
+                    self.tolkein_content.write(f'{i[0]} {i[1]}\n')
+                self.content.flush()
+                self.tolkein_content.flush()
+            self.logger.info(
+                f"Downloaded {tbd_url}, status <{resp.status}>, "
+                f"using cache {self.config.cache_server}.")
+            scraped_urls = scraper.scraper(tbd_url, resp)
+            for scraped_url in scraped_urls:
+                self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
