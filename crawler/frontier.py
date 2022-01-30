@@ -15,7 +15,6 @@ class Frontier(object):
         self.logger = get_logger("FRONTIER")
         self.config = config
         self.to_be_downloaded = list()
-        self.downloaded_urls = set()
         self.output = open("output/output.txt", "a")
         self.unique = open("output/unique_urls.txt", "a")
         self.save_file = self.config.save_file + ".bak"
@@ -82,7 +81,6 @@ class Frontier(object):
             self.save.sync()
             self.output.write(f'{url}\n')
             self.output.flush()
-            self.downloaded_urls.add(url)
             self.to_be_downloaded.append(url)
     
     def mark_url_complete(self, url):

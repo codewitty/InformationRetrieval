@@ -105,22 +105,14 @@ def extract_next_links(url, resp):
     #/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/
 
     s = set()
-    word_freq = {}
     if resp.status/100 == 2:
         soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-        #for div in soup.find_all('div'):
-            #if div.get("id" == "data-date"):
-                #continue
         for link in soup.find_all('a'):
-            #print(f'LINK: {link.get("href")}')
-            if link.get('href') != None:
-                #print(f'LINK: {link.get("href")}')
-                unfragmented = link.get('href')
+            unfragmented = link.get('href')
+            if unfragmented != None:
                 unparsed = urlparse(unfragmented)
-                parsed_url = unparsed._replace(query="",fragment="").geturl()  
-                #print(f'PARSED: {unparsed}')
+                parsed_url = unparsed._replace(query="",fragment="").geturl()
                 s.add(parsed_url)
-                #s.add(unfragmented)
         return list(s)
     
 
@@ -132,7 +124,7 @@ def is_valid(url):
     if (('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url)) and not(re.findall(r"\d{4}-\d{2}", url)):
         try:
             parsed = urlparse(url)
-            if parsed.scheme not in set(["http", "https"]) or ('files/' in url):
+            if parsed.scheme not in set(["http", "https"]) or ('files/' in url) or ('img' in url):
                 return False
 
             return not re.match(

@@ -37,16 +37,20 @@ class Worker(Thread):
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
-                for url in self.frontier.downloaded_urls:
-                    self.frontier.unique.write(f'{url}\n')
-                self.frontier.unique.flush()
+                utc = datetime.datetime.now(tz=pytz.utc)
+                current = utc.astimezone(timezone('US/Pacific'))
+                self.maxWordFile.write(f'Crawler End time: {current}\n')
+                self.maxWordFile.close()
+                self.frontier.output.close()
+                self.frontier.unique.close()
                 break
             resp = download(tbd_url, self.config, self.logger)
             if resp.raw_response is not None and scraper.is_valid(tbd_url):
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-                #text_string = soup.get_text()
                 text_string = soup.get_text(strip = True)
                 max_words = len(text_string.split())
+                if max_words < 51:
+                    continue
                 text_tokens = scraper.tokenize(text_string)
                 tolkein_tokens = scraper.tolkeinizer(text_string)
                 #max_words = scraper.maxWords(text_string)
