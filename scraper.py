@@ -124,7 +124,8 @@ def is_valid(url):
     if (('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url)) and not(re.findall(r"\d{4}-\d{2}", url)):
         try:
             parsed = urlparse(url)
-            if parsed.scheme not in set(["http", "https"]) or ('files/' in url) or ('img' in url):
+            # Filter for valid urls, remove duplicate pages from Ramesh's blog
+            if parsed.scheme not in set(["http", "https"]) or ('files/' in url) or ('img' in url) or ('ramesh/page' in url):
                 return False
 
             return not re.match(
