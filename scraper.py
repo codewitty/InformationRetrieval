@@ -129,24 +129,17 @@ def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
-    if (('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url)) and ((not (r"\d{4}-\d{2}-\d{2}$" in url)) or (not (r"\d{4}-\d{2}$" in url))):
+    if (('.ics.uci.edu/' in url) or ('.cs.uci.edu/' in url) or ('.informatics.uci.edu/' in url) or ('.stat.uci.edu/' in url) or ('today.uci.edu/department/information_computer_sciences/' in url)) and (not (r"\d{4}-\d{2}" in url)):
         try:
             parsed = urlparse(url)
             if parsed.scheme not in set(["http", "https"]) or ('files/' in url):
                 return False
-            """
-            if re.findall(r"\d{4}-\d{2}-\d{2}$", parsed.path.lower()):
-                print("INSIDE REGEX YY/MM/DD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                return False
-            if re.findall(r"\d{4}-\d{2}$", parsed.path.lower()):
-                print("INSIDE REGEX YY/MM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                return False
-            """
+
             return not re.match(
                 r".*\.(css|js|bmp|gif|jpe?g|ico"
                 + r"|png|tiff?|mid|mp2|mp3|mp4"
-                + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-                + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+                + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf|php|odc"
+                + r"|ps|eps|tex|ppt|pptx|ppsx|doc|docx|xls|xlsx|names"
                 + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
                 + r"|epub|dll|cnf|tgz|sha1"
                 + r"|thmx|mso|arff|rtf|jar|csv"
