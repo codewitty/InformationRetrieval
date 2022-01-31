@@ -8,6 +8,8 @@ import time
 import pytz
 from pytz import timezone
 from bs4 import BeautifulSoup
+import requests
+import urllib.request
 
 
 class Worker(Thread):
@@ -16,6 +18,7 @@ class Worker(Thread):
         utc = datetime.datetime.now(tz=pytz.utc)
         current = utc.astimezone(timezone('US/Pacific'))
         # Set config variables
+        
         self.logger = get_logger(f"Worker-{worker_id}", "Worker")
         self.config = config
         self.frontier = frontier
@@ -33,6 +36,8 @@ class Worker(Thread):
         super().__init__(daemon=True)
         
     def run(self):
+        current_max = 0
+        current_max_link = ''
         while True:
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
@@ -40,10 +45,31 @@ class Worker(Thread):
                 utc = datetime.datetime.now(tz=pytz.utc)
                 current = utc.astimezone(timezone('US/Pacific'))
                 self.maxWordFile.write(f'Crawler End time: {current}\n')
+                self.maxWordFile.write(f'{current_max_link} {current_max}\n')
                 self.maxWordFile.close()
+                file = open("output/content.txt", 'r')
+                line = file.readline()
+                tokenMap = {}
+                while len(line) != 0:
+                    parts = line.split()
+                    if parts[0] in tokenMap:
+                        tokenMap[parts[0]] = parts[1]
+                    else:
+                        tokenMap[parts[0]] += parts[1]
+                
+                    
+                orderedTokens = sorted(tokenMap.items(), key=lambda token: token[1], reverse=True)
+                count = 0
+                for i in orderedTokens:
+                    self.content.write(f'{i[0]}\t{i[1]}')
+                    if count > 50:
+                        break
+                
+                
                 self.frontier.output.close()
                 self.frontier.unique.close()
                 break
+            
             resp = download(tbd_url, self.config, self.logger)
             if resp.raw_response is not None and scraper.is_valid(tbd_url):
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
@@ -54,7 +80,10 @@ class Worker(Thread):
                 text_tokens = scraper.tokenize(text_string)
                 tolkein_tokens = scraper.tolkeinizer(text_string)
                 #max_words = scraper.maxWords(text_string)
-                self.maxWordFile.write(f'{tbd_url} {max_words}\n')
+                if current_max < max_words:
+                    current_max = max_words
+                    current_max_link = tbd_url
+                self.maxWordFile.write(f'{tbd_url} {max_words} {current_max}\n')
                 self.maxWordFile.flush()
                 tokenMap = scraper.wordFreq(text_tokens)
                 tolkeinMap = scraper.wordFreq(tolkein_tokens)
