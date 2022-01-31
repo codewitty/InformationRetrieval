@@ -8,6 +8,7 @@ from utils import get_logger, get_urlhash, normalize
 from scraper import is_valid, checkEnglish, tokenize, wordFreq, printFreq
 from urllib.parse import urlparse
 
+
         
 class Frontier(object):
     
