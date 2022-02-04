@@ -71,7 +71,7 @@ class Worker(Thread):
                 break
             
             resp = download(tbd_url, self.config, self.logger)
-            if resp.raw_response is not None and scraper.is_valid(tbd_url):
+            if resp.raw_response is not None and scraper.is_valid(tbd_url) and resp.status == 200:
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
                 text_string = soup.get_text(strip = True)
                 max_words = len(text_string.split())
@@ -79,7 +79,6 @@ class Worker(Thread):
                     continue
                 text_tokens = scraper.tokenize(text_string)
                 tolkein_tokens = scraper.tolkeinizer(text_string)
-                #max_words = scraper.maxWords(text_string)
                 if current_max < max_words:
                     current_max = max_words
                     current_max_link = tbd_url
