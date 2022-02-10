@@ -1,10 +1,11 @@
 import json
 import os
-import porterStemming
 import tokenizer
 from bs4 import BeautifulSoup
+import zlib
 
 count = 0
+inverted_index = {}
 
 def checkEnglish(str):
     try:
@@ -17,16 +18,23 @@ def checkEnglish(str):
 
 def print_words(filename):
     global count
+    global inverted_index
     f = open(filename, "r")
-    o = open("output_tokens.txt", "a")
     data = json.load(f)
     url = data['url']
     print(url)
     soup = BeautifulSoup(data['content'], 'html.parser')
     text_string = soup.get_text(strip = True)
     text_tokens = tokenizer.tokenize(text_string)
+    for token in text_tokens:
+        if token in inverted_index.keys() and url not in inverted_index[token]:
+            inverted_index[token][0] += 1
+            inverted_index[token].append(url)
+        else:
+            lst = [1, url]
+            inverted_index[token] = lst
+
     #self.maxWordFile.flush()
-    o.write(f'{url}: {text_tokens}\n')
     count += 1
     print(count)
 #test
@@ -64,6 +72,30 @@ def enter(directory):
             enter(f)
 
 if __name__ == '__main__':
-    directory = '/Users/joshuagomes/InformationRetrieval/DEV'
+    directory = '/Users/joshuagomes/InformationRetrieval/DDev'
     enter(directory)
-    
+    print(f'Number of tokens: {len(inverted_index)}')
+    #print(f'Size of Data Structure: {str((inverted_index.__sizeof__()))}')
+    with open ("output.json", "w") as outfile:
+        json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
+        print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
+        outfile.write(json_object)
+
+    with open ("output_compressed.json", "wb") as comp:
+        fin = open("output.json", "rb")
+        data_in = fin.read()
+        compressed_data = zlib.compress(data_in, zlib.Z_BEST_COMPRESSION)
+        print(f'Size of Compressed jSON Data Structure: {str((compressed_data.__sizeof__()))}')
+        fin.close()
+        comp.write(compressed_data)
+        
+        
+    f = open("output.json", "r")
+    data = json.load(f)
+    term = 'would'
+    print(type(data))
+    if term in data.keys():
+        print(f'\n\n\nFound {data[term]}\n\n\n')
+    else:
+        print(f'Not found!!!')
+    print(f'Size of Loaded Data Structure: {str((data.__sizeof__()))}')
