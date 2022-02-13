@@ -2,7 +2,7 @@ import json
 import os
 import tokenizer
 from bs4 import BeautifulSoup
-import zlib
+import zipfile
 
 count = 0
 inverted_index = {}
@@ -37,7 +37,6 @@ def print_words(filename):
     #self.maxWordFile.flush()
     count += 1
     print(count)
-#test
 
 def print_words_nonUni(filename):
     global count
@@ -72,30 +71,33 @@ def enter(directory):
             enter(f)
 
 if __name__ == '__main__':
-    directory = '/Users/joshuagomes/InformationRetrieval/DDev'
+    directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
+    archive = "output.zip"
     enter(directory)
     print(f'Number of tokens: {len(inverted_index)}')
-    #print(f'Size of Data Structure: {str((inverted_index.__sizeof__()))}')
+    print(f'Number of documents: {count}')
     with open ("output.json", "w") as outfile:
         json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
         print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
         outfile.write(json_object)
 
-    with open ("output_compressed.json", "wb") as comp:
-        fin = open("output.json", "rb")
-        data_in = fin.read()
-        compressed_data = zlib.compress(data_in, zlib.Z_BEST_COMPRESSION)
-        print(f'Size of Compressed jSON Data Structure: {str((compressed_data.__sizeof__()))}')
-        fin.close()
-        comp.write(compressed_data)
+"""
+    with zipfile.ZipFile(archive, "w") as comp:
+        comp.write("output.json")
         
-        
-    f = open("output.json", "r")
-    data = json.load(f)
+    with zipfile.ZipFile(archive, "r") as zf:
+        crc_test = zf.testzip()
+        if crc_test is not None:
+            print(f"Bad CRC or file headers: {crc_test}")
+        with zf.open("output.json") as f:
+            data_c = (f.read().decode())
+    print(type(data_c))
+    data = json.loads(data_c)
+    print(f'Size of Decompressed jSON Data Structure: {str((data.__sizeof__()))}')
     term = 'would'
-    print(type(data))
     if term in data.keys():
         print(f'\n\n\nFound {data[term]}\n\n\n')
     else:
         print(f'Not found!!!')
     print(f'Size of Loaded Data Structure: {str((data.__sizeof__()))}')
+"""
