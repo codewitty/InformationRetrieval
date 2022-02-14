@@ -75,19 +75,15 @@ def enter(directory):
 def query_lst(somestring):
     global queries_list
     queries_list = list()
-    for queries in somestring.split(","):
-        if "AND" in queries:
-            queries_list.append(set(queries.strip().split(" AND ")))
-        elif "and" in queries:
-            queries_list.append(set(queries.strip().split(" and ")))
-        else:
+    for queries in somestring.split(" "):
             queries_list.append(queries.strip())
             
 
 if __name__ == '__main__':
-    queries_input = input('Enter the queries (seperate by ","): ')
+    queries_input = input('Enter your query here: ')
     query_lst(queries_input)
-    directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
+    print(f'Queries are: {queries_list}')
+    directory = '/Users/joshuagomes/InformationRetrieval/DDev'
     archive = "output.zip"
     enter(directory)
     print(f'Number of tokens: {len(inverted_index)}')
