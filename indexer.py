@@ -86,7 +86,7 @@ def queries_list(somestring):
 
 
 if __name__ == '__main__':
-    queries = input()
+    queries = input('Enter the queries (seperate by ","): ')
     directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     archive = "output.zip"
     enter(directory)
