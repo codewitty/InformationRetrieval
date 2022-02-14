@@ -72,21 +72,21 @@ def enter(directory):
 
 #convert all queries from the input into a list, store AND bool queries in a set
 #then append into the lst
-def queries_list(somestring):
-    lst = list()
+def query_lst(somestring):
+    global queries_list
+    queries_list = list()
     for queries in somestring.split(","):
         if "AND" in queries:
-            lst.append(set(queries.strip().split(" AND ")))
+            queries_list.append(set(queries.strip().split(" AND ")))
         elif "and" in queries:
-            lst.append(set(queries.strip().split(" and ")))
+            queries_list.append(set(queries.strip().split(" and ")))
         else:
-            lst.append(queries.strip())
+            queries_list.append(queries.strip())
             
-    return lst
-
 
 if __name__ == '__main__':
-    queries = input('Enter the queries (seperate by ","): ')
+    queries_input = input('Enter the queries (seperate by ","): ')
+    query_lst(queries_input)
     directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     archive = "output.zip"
     enter(directory)
