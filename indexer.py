@@ -70,7 +70,23 @@ def enter(directory):
         elif os.path.isdir(f):
             enter(f)
 
+#convert all queries from the input into a list, store AND bool queries in a set
+#then append into the lst
+def queries_list(somestring):
+    lst = list()
+    for queries in somestring.split(","):
+        if "AND" in queries:
+            lst.append(set(queries.strip().split(" AND ")))
+        elif "and" in queries:
+            lst.append(set(queries.strip().split(" and ")))
+        else:
+            lst.append(queries.strip())
+            
+    return lst
+
+
 if __name__ == '__main__':
+    queries = input()
     directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     archive = "output.zip"
     enter(directory)
