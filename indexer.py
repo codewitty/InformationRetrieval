@@ -77,7 +77,22 @@ def query_lst(somestring):
     queries_list = list()
     for queries in somestring.split(" "):
             queries_list.append(queries.strip())
-            
+
+def search(someList):
+    postings_list = []
+    for element in someList:
+        element_l = element.lower()
+        if element_l in inverted_index.keys():
+            posting = inverted_index[element_l]
+            posting.pop(0)
+            postings_list.append(set(posting))
+        else:
+            print(f'Search Query {element} not found')
+    print(f'postings list: {postings_list}')
+    if len(postings_list) > 1:
+        print(postings_list[0].intersection(*postings_list))
+
+
 
 if __name__ == '__main__':
     queries_input = input('Enter your query here: ')
@@ -92,6 +107,8 @@ if __name__ == '__main__':
         json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
         print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
         outfile.write(json_object)
+
+    search(queries_list)
 
 """
     with zipfile.ZipFile(archive, "w") as comp:
