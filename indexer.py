@@ -91,7 +91,26 @@ def search(someList):
     print(f'postings list: {postings_list}')
     if len(postings_list) > 1:
         print(postings_list[0].intersection(*postings_list))
+##
+def get_idf(token):
+    t = inverted_index[token][0] # number of files contains the token
+    df = t/count
+    idf = math.log(count/(df+1))
+    return idf
+    
+def get_tfidf(token):
+    tf = []
+    #doc_id = 0
+    tf = 0
+    for url in inverted_index[token]:
+        
+        #the number of token found in that url
+        #total word count of the file
+        
+        tf.append(set(url, tf * get_idf(token)))#num of token found / #total word count
+        
 
+    return tf
 
 
 if __name__ == '__main__':
