@@ -3,6 +3,9 @@ import os
 import tokenizer
 from bs4 import BeautifulSoup
 import zipfile
+import time
+from nltk.stem.snowball import SnowballStemmer
+
 
 count = 0
 inverted_index = {}
@@ -16,7 +19,7 @@ def checkEnglish(str):
         print("All Good")
         return True
 
-def print_words(filename):
+def getContent(filename):
     global count
     global inverted_index
     f = open(filename, "r")
@@ -38,7 +41,7 @@ def print_words(filename):
     count += 1
     print(count)
 
-def print_words_nonUni(filename):
+def getContent_nonUni(filename):
     global count
     f = tokenize.open(filename)
     """
@@ -54,21 +57,21 @@ def print_words_nonUni(filename):
     print(count)
 
 
-def enter(directory):
+def buildIndex(directory):
     for filename in os.listdir(directory):
         f = os.path.join(directory, filename)
         # checking if it is a file
 
         if os.path.isfile(f):
             try:
-                print_words(f)
+                getContent(f)
             except UnicodeDecodeError:
                 #print("We are trying to decode now")
-                #print_words_nonUni(f)
+                #getContent_nonUni(f)
                 continue
 
         elif os.path.isdir(f):
-            enter(f)
+            buildIndex(f)
 
 #convert all queries from the input into a list, store AND bool queries in a set
 #then append into the lst
@@ -80,17 +83,21 @@ def query_lst(somestring):
 
 def search(someList):
     postings_list = []
+    p = SnowballStemmer("english")
     for element in someList:
         element_l = element.lower()
+        element_l = p.stem(element_l)
         if element_l in inverted_index.keys():
             posting = inverted_index[element_l]
+            print(f'Keyword {element} was found in these pages:{posting}')
             posting.pop(0)
             postings_list.append(set(posting))
         else:
             print(f'Search Query {element} not found')
-    print(f'postings list: {postings_list}')
     if len(postings_list) > 1:
-        print(postings_list[0].intersection(*postings_list))
+        intersection = set.intersection(*postings_list)
+        #print(postings_list[0].intersection(*postings_list))
+        print(f'Intersection List: {intersection}')
 
 
 
@@ -98,16 +105,28 @@ if __name__ == '__main__':
     queries_input = input('Enter your query here: ')
     query_lst(queries_input)
     print(f'Queries are: {queries_list}')
-    directory = '/Users/joshuagomes/InformationRetrieval/DDev'
+"""
+    directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     archive = "output.zip"
-    enter(directory)
+    start = time.time()
+    buildIndex(directory)
+    end = time.time()
+    mins = (end - start)/60
+    print(f'Start Time: {start}')
+    print(f'End Time: {end}')
+    print(f'Time taken: {mins}')
     print(f'Number of tokens: {len(inverted_index)}')
     print(f'Number of documents: {count}')
-    with open ("output.json", "w") as outfile:
+    with open ("output_nltkStem.json", "w") as outfile:
         json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
         print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
         outfile.write(json_object)
+"""
+    with open("output_nltkStem.json") as f:
+        data_c = (f.read())
 
+    inverted_index = json.loads(data_c)
+    print(len(inverted_index))
     search(queries_list)
 
 """
