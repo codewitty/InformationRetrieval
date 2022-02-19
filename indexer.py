@@ -74,7 +74,7 @@ def buildIndex(directory):
                 continue
 
         elif os.path.isdir(f):
-            buildIndex(f)
+            buildIndex(f) 
 
 #convert all queries from the input into a list, store AND bool queries in a set
 #then append into the lst
