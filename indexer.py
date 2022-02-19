@@ -1,14 +1,20 @@
 import json
+import re
 import os
 import tokenizer
 from bs4 import BeautifulSoup
 import zipfile
 import time
 from nltk.stem.snowball import SnowballStemmer
+from lxml.html.clean import Cleaner
+from lxml import etree
 
 
 count = 0
 inverted_index = {}
+invalid_pages = []
+json_error_pages = []
+error_list = []
 
 def checkEnglish(str):
     try:
@@ -19,15 +25,70 @@ def checkEnglish(str):
         print("All Good")
         return True
 
+def sanitize(dirty_html):
+    cleaner = Cleaner(page_structure=True,
+                  meta=True,
+                  embedded=True,
+                  links=True,
+                  style=True,
+                  processing_instructions=True,
+                  inline_style=True,
+                  scripts=True,
+                  javascript=True,
+                  comments=True,
+                  frames=True,
+                  forms=True,
+                  annoying_tags=True,
+                  remove_unknown_tags=True,
+                  safe_attrs_only=True,
+                  safe_attrs=frozenset(['src','color', 'href', 'title', 'class', 'name', 'id']),
+                  remove_tags=('span', 'font', 'div')
+                  )
+
+    return cleaner.clean_html(dirty_html)
+
 def getContent(filename):
+    global json_error_pages
+    global error_list
     global count
     global inverted_index
     f = open(filename, "r")
-    data = json.load(f)
+    try:
+        data = json.load(f)
+    except:
+        json_error_pages.append(filename)
+        return
     url = data['url']
-    print(url)
-    soup = BeautifulSoup(data['content'], 'html.parser')
-    text_string = soup.get_text(strip = True)
+    content = data['content']
+    re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]+', '', content)
+    content = bytes(bytearray(content, encoding='utf-8'))
+    """
+    if content == "":
+        print('Empty Doc')
+        return
+    if len(content) < 5:
+        print('Empty Doc')
+        return
+    """
+    #print(f'\n\n\n\n\n\n\n\n\n{filename}~~~~~~~~~~~~~~~~~~~~~~~~ORIGINAL DATA~~~~~~~~~~~\n{content}')
+    try:
+        sanitized_data = sanitize(content)
+    except (ValueError, etree.ParserError):
+        error_list.append(filename)
+        return
+
+    #print(f'\n\n\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SANITIZED\n{sanitized_data}')
+    soup = BeautifulSoup(sanitized_data, 'html.parser')
+    for script in soup(["script", "style"]):
+        script.extract()
+    text_string = soup.get_text()
+    # break into lines and remove leading and trailing space on each
+    lines = (line.strip() for line in text_string.splitlines())
+    # break multi-headlines into a line each
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    # drop blank lines
+    text_string = '\n'.join(chunk for chunk in chunks if chunk)
+    #print(f'\n\n\n\n\n\n\n\n\n~~~~~~~~~~Text~~~~~~~~~~~~~~~~~~~~~~~~\n{text_string}')
     text_tokens = tokenizer.tokenize(text_string)
     for token in text_tokens:
         if token in inverted_index.keys() and url not in inverted_index[token]:
@@ -43,21 +104,24 @@ def getContent(filename):
 
 def getContent_nonUni(filename):
     global count
-    f = tokenize.open(filename)
+    #print(url)
+    count += 1
     """
+    f = tokenize.open(filename)
     if not isinstance(text, bytes):
     text = text.encode('utf-8')
     f = text + (pad * chr(pad)).encode("utf-8")
-    """
     #data1 = f.read()
     #data1.encode('ascii', 'ignore')
     data1 = json.loads(f.read())
     print(data1['url'])
     count += 1
     print(count)
+    """
 
 
 def buildIndex(directory):
+    global invalid_pages
     for filename in os.listdir(directory):
         f = os.path.join(directory, filename)
         # checking if it is a file
@@ -68,7 +132,8 @@ def buildIndex(directory):
             except UnicodeDecodeError:
                 #print("We are trying to decode now")
                 #getContent_nonUni(f)
-                continue
+                invalid_pages.append(f)
+                #continue
 
         elif os.path.isdir(f):
             buildIndex(f)
@@ -86,10 +151,10 @@ def search(someList):
     p = SnowballStemmer("english")
     for element in someList:
         element_l = element.lower()
-        element_l = p.stem(element_l)
+        #element_l = p.stem(element_l)
         if element_l in inverted_index.keys():
             posting = inverted_index[element_l]
-            print(f'Keyword {element} was found in these pages:{posting}')
+            print(f'Keyword {element} was stemmed into {element_l} found in these pages:{posting}')
             posting.pop(0)
             postings_list.append(set(posting))
         else:
@@ -123,7 +188,7 @@ if __name__ == '__main__':
     queries_input = input('Enter your query here: ')
     query_lst(queries_input)
     print(f'Queries are: {queries_list}')
-"""
+    """
     directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     archive = "output.zip"
     start = time.time()
@@ -135,16 +200,19 @@ if __name__ == '__main__':
     print(f'Time taken: {mins}')
     print(f'Number of tokens: {len(inverted_index)}')
     print(f'Number of documents: {count}')
-    with open ("output_nltkStem.json", "w") as outfile:
+    print(f'Invalid Pages: {invalid_pages}')
+    print(f'JSON error Pages: {json_error_pages}')
+    print(f'Etree Error Pages: {error_list}')
+    with open ("output_noStem.json", "w") as outfile:
         json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
         print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
         outfile.write(json_object)
-"""
-    with open("output_nltkStem.json") as f:
+    """
+    with open("output_noStem.json") as f:
         data_c = (f.read())
 
     inverted_index = json.loads(data_c)
-    print(len(inverted_index))
+    print(json.dumps(inverted_index, indent=4))
     search(queries_list)
 
 """
