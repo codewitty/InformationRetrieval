@@ -9,7 +9,8 @@ from nltk.stem.snowball import SnowballStemmer
 
 count = 0
 inverted_index = {}
-
+total_word = {}
+doc_id = {}
 def checkEnglish(str):
     try:
         str.encode('ascii')
@@ -29,6 +30,7 @@ def getContent(filename):
     soup = BeautifulSoup(data['content'], 'html.parser')
     text_string = soup.get_text(strip = True)
     text_tokens = tokenizer.tokenize(text_string)
+    total_word[url] = len(text_tokens)
     for token in text_tokens:
         if token in inverted_index.keys() and url not in inverted_index[token]:
             inverted_index[token][0] += 1
@@ -38,6 +40,7 @@ def getContent(filename):
             inverted_index[token] = lst
 
     #self.maxWordFile.flush()
+    doc_id[url] = count
     count += 1
     print(count)
 
@@ -106,17 +109,15 @@ def get_idf(token):
     return idf
     
 def get_tfidf(token):
-    tf = []
+    tfidf = []
     #doc_id = 0
-    tf = 0
-    for url in inverted_index[token]:
-        
-        #the number of token found in that url
-        #total word count of the file
-        
-        tf.append(set(url, tf * get_idf(token)))#num of token found / #total word count
-        
-    return tf
+    if token.lower() in inverted_index.keys():
+        for url in inverted_index[token]:
+            token_count = ininverted_index[token][0]#the number of token found in that url
+            tf = token_count / total_word[url] #num of token found / #total word count
+            tfidf.append(set(url, doc_id[url], tf * get_idf(token)))
+    
+    return tfidf
 
 
 if __name__ == '__main__':
