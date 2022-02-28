@@ -114,19 +114,6 @@ def getContent(filename):
     count += 1
     print(count)
 
-def enter(directory):
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-
-        if os.path.isfile(f):
-            try:
-                getContent(f)
-            except UnicodeDecodeError:
-
-                continue
-
-        elif os.path.isdir(f):
-            enter(f)
 def getContent_nonUni(filename):
     global count
     #print(url)
@@ -238,7 +225,7 @@ if __name__ == '__main__':
 
     inverted_index = json.loads(data_c)
     print(json.dumps(inverted_index, indent=4))
-    enter(directory)
+    buildIndex(directory)
     search(queries_list)
     print(f'TF-IDF{get_tfidf(queries_list)}')
 
