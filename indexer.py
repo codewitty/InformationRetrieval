@@ -18,6 +18,7 @@ json_error_pages = []
 error_list = []
 total_word = {}
 doc_id = {}
+token_count ={}
 
 def checkEnglish(str):
     try:
@@ -94,7 +95,13 @@ def getContent(filename):
     #print(f'\n\n\n\n\n\n\n\n\n~~~~~~~~~~Text~~~~~~~~~~~~~~~~~~~~~~~~\n{text_string}')
     text_tokens = tokenizer.tokenize(text_string)
     total_word[url] = len(text_tokens)
+    token_count[url] ={}
     for token in text_tokens:
+        if token in inverted_index.keys():
+            if token in token_count[url].keys():
+                token_count[url][token] += 1
+            else:
+                token_count[url][token]  = 1
         if token in inverted_index.keys() and url not in inverted_index[token]:
             inverted_index[token][0] += 1
             inverted_index[token].append(url)
@@ -170,21 +177,23 @@ def search(someList):
         print(f'Intersection List: {intersection}')
 
 def get_idf(token):
-    t = inverted_index[token][0] # number of files contains the token
+    t = len(inverted_index[token]) # number of files contains the token
     df = t/count
     idf = math.log(count/(df+1))
     return idf
     
-def get_tfidf(token):
-    tfidf = []
-    #doc_id = 0
-    if token.lower() in inverted_index.keys():
-        for url in inverted_index[token]:
-            token_count = ininverted_index[token][0]#the number of token found in that url
-            tf = token_count / total_word[url] #num of token found / #total word count
-            tfidf.append(set(url, doc_id[url], tf * get_idf(token)))
-    
-    return tfidf
+def get_tfidf(q_list):
+    tf_dict ={}
+    for token in q_list:
+        tfidf = []
+        #doc_id = 0
+        if token in inverted_index.keys():
+            for url in inverted_index[token]:
+                tc = token_count[url][token]#the number of token found in that url
+                tf = tc / total_word[url] #num of token found / #total word count
+                tfidf.append([url, doc_id[url], tf * get_idf(token)])
+        tf_dict[token] = tfidf
+    return tf_dict
 
 
 if __name__ == '__main__':
@@ -217,6 +226,7 @@ if __name__ == '__main__':
     inverted_index = json.loads(data_c)
     print(json.dumps(inverted_index, indent=4))
     search(queries_list)
+    print(get_tfidf(queries_list))
 
 """
     with zipfile.ZipFile(archive, "w") as comp:
