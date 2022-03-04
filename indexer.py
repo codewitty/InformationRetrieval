@@ -185,15 +185,21 @@ def get_idf(token):
 def get_tfidf(q_list):
     tf_dict ={}
     for token in q_list:
-        tfidf = []
+        tfidf = {}
         #doc_id = 0
         if token in inverted_index.keys():
             for url in inverted_index[token]:
                 tc = token_count[url][token]#the number of token found in that url
                 tf = tc / total_word[url] #num of token found / #total word count
-                tfidf.append([url, doc_id[url], tf * get_idf(token)])
-        tf_dict[token] = tfidf
+                tfidf[url] = (doc_id[url], tf * get_idf(token))
+        tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
     return tf_dict
+def print_result(td):
+    print("Ranked by tf-idf")
+    for q in td:
+        print(f"Query: {q}")
+        for k,v in td[q].items():
+            print(f"url: {k}, docID: {v[0]}")
 
 
 if __name__ == '__main__':
@@ -227,7 +233,7 @@ if __name__ == '__main__':
     print(json.dumps(inverted_index, indent=4))
     buildIndex(directory)
     search(queries_list)
-    print(f'TF-IDF{get_tfidf(queries_list)}')
+    print_result(get_tfidf(queries_list))
 
 """
     with zipfile.ZipFile(archive, "w") as comp:
