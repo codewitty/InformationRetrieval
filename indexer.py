@@ -1,6 +1,8 @@
 import json
 import re
 import os
+import os.path
+from pathlib import Path
 import tokenizer
 from bs4 import BeautifulSoup
 import zipfile
@@ -64,8 +66,6 @@ def getContent(filename):
         return
     url = data['url']
     content = data['content']
-    re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]+', '', content)
-    content = bytes(bytearray(content, encoding='utf-8'))
     """
     if content == "":
         print('Empty Doc')
@@ -74,25 +74,10 @@ def getContent(filename):
         print('Empty Doc')
         return
     """
-    #print(f'\n\n\n\n\n\n\n\n\n{filename}~~~~~~~~~~~~~~~~~~~~~~~~ORIGINAL DATA~~~~~~~~~~~\n{content}')
-    try:
-        sanitized_data = sanitize(content)
-    except (ValueError, etree.ParserError):
-        error_list.append(filename)
-        return
-
-    #print(f'\n\n\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SANITIZED\n{sanitized_data}')
-    soup = BeautifulSoup(sanitized_data, 'html.parser')
+    soup = BeautifulSoup(content, 'html.parser')
     for script in soup(["script", "style"]):
         script.extract()
-    text_string = soup.get_text()
-    # break into lines and remove leading and trailing space on each
-    lines = (line.strip() for line in text_string.splitlines())
-    # break multi-headlines into a line each
-    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-    # drop blank lines
-    text_string = '\n'.join(chunk for chunk in chunks if chunk)
-    #print(f'\n\n\n\n\n\n\n\n\n~~~~~~~~~~Text~~~~~~~~~~~~~~~~~~~~~~~~\n{text_string}')
+    text_string = soup.get_text(strip = True)
     text_tokens = tokenizer.tokenize(text_string)
     total_word[url] = len(text_tokens)
     token_count[url] ={}
@@ -113,6 +98,9 @@ def getContent(filename):
     doc_id[url] = count
     count += 1
     print(count)
+    if count % 10000 == 0:
+        writeToDisk(inverted_index)
+        inverted_index = {}
 
 def getContent_nonUni(filename):
     global count
@@ -150,8 +138,8 @@ def buildIndex(directory):
         elif os.path.isdir(f):
             buildIndex(f) 
 
-#convert all queries from the input into a list, store AND bool queries in a set
-#then append into the lst
+# Convert all queries from the input into a list, store AND bool queries in a set
+# then append into the list
 def query_lst(somestring):
     global queries_list
     queries_list = list()
@@ -194,6 +182,7 @@ def get_tfidf(q_list):
                 tfidf[url] = (doc_id[url], tf * get_idf(token))
         tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
     return tf_dict
+
 def print_result(td):
     print("Ranked by tf-idf")
     for q in td:
@@ -201,57 +190,87 @@ def print_result(td):
         for k,v in td[q].items():
             print(f"url: {k}, docID: {v[0]}")
 
+def writeToDisk(index):
+    global count
+    filename = "output_indexes/output" + str(count) + ".json"
+    with open (filename, "w") as outfile:
+        json_object = json.dumps(index, indent=4, sort_keys=True)
+        outfile.write(json_object)
+
+def mergeIndexes(output_dir):
+    global inverted_index
+    print(f'Length of original index before starting = {len(inverted_index)}')
+    for filename in os.listdir(output_dir):
+        f = os.path.join(output_dir, filename)
+        with open(f) as index_file:
+            data_c = (index_file.read())
+            temp_index = json.loads(data_c)
+            print(f'Length of index from {filename} = {len(temp_index)}')
+
+        for posting in temp_index.keys():
+            if posting in inverted_index.keys():
+                temp_list  = temp_index[posting]
+                for page in temp_list:
+                    if page not in inverted_index[posting]:
+                        inverted_index[posting].append(page)
+                        inverted_index[posting][0] += 1
+            else:
+                inverted_index[posting] = temp_index[posting]
+    #os.rmdir(output_dir)
 
 if __name__ == '__main__':
-    queries_input = input('Enter your query here: ')
-    query_lst(queries_input)
-    print(f'Queries are: {queries_list}')
-    """
+    #directory = '/Users/joshuagomes/InformationRetrieval/DDev'
+    #directory = '/Users/joshuagomes/InformationRetrieval/Dev'
     directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     archive = "output.zip"
     start = time.time()
+    output_directory = "/Users/joshuagomes/InformationRetrieval/output_indexes"
+    output_check = Path(output_directory)
+    if not output_check.exists():
+        os.mkdir(output_directory)
+    output_index = 'inverted_index_final.json'
+    output_index_nm = 'inverted_index_final_nomerge.json'
     buildIndex(directory)
+    # Time measurement
     end = time.time()
     mins = (end - start)/60
     print(f'Start Time: {start}')
     print(f'End Time: {end}')
     print(f'Time taken: {mins}')
+
+    # Merge all Indexes
+    mergeIndexes(output_directory)
+    
+    # Write final merged index to disk:
+    with open (output_index, "w") as outfile:
+        json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
+        outfile.write(json_object)
+
+    # Sanity checks
     print(f'Number of tokens: {len(inverted_index)}')
     print(f'Number of documents: {count}')
     print(f'Invalid Pages: {invalid_pages}')
     print(f'JSON error Pages: {json_error_pages}')
     print(f'Etree Error Pages: {error_list}')
-    with open ("output_noStem.json", "w") as outfile:
-        json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
-        print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
-        outfile.write(json_object)
-    """
-    with open("output_noStem.json") as f:
-        data_c = (f.read())
 
+    with open("inverted_index_final_nomerge.json") as f:
+        data_c = (f.read())
+    index1 = json.loads(data_c)
+    print(f'Number of tokens Unmerged Index: {len(index1)}')
+
+    with open("inverted_index_final.json") as f:
+        data_c = (f.read())
+    index2 = json.loads(data_c)
+    print(f'Number of tokens Merged Index: {len(index2)}')
+
+"""
+    #Querying the DB
+    queries_input = input('Enter your query here: ')
+    query_lst(queries_input)
+    print(f'Queries are: {queries_list}')
     inverted_index = json.loads(data_c)
     print(json.dumps(inverted_index, indent=4))
     buildIndex(directory)
     search(queries_list)
     print_result(get_tfidf(queries_list))
-
-"""
-    with zipfile.ZipFile(archive, "w") as comp:
-        comp.write("output.json")
-        
-    with zipfile.ZipFile(archive, "r") as zf:
-        crc_test = zf.testzip()
-        if crc_test is not None:
-            print(f"Bad CRC or file headers: {crc_test}")
-        with zf.open("output.json") as f:
-            data_c = (f.read().decode())
-    print(type(data_c))
-    data = json.loads(data_c)
-    print(f'Size of Decompressed jSON Data Structure: {str((data.__sizeof__()))}')
-    term = 'would'
-    if term in data.keys():
-        print(f'\n\n\nFound {data[term]}\n\n\n')
-    else:
-        print(f'Not found!!!')
-    print(f'Size of Loaded Data Structure: {str((data.__sizeof__()))}')
 """
