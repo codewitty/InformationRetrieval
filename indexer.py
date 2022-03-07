@@ -141,7 +141,7 @@ def buildIndex(directory):
 
 # Convert all queries from the input into a list, store AND bool queries in a set
 # then append into the list
-def query_lst(somestring):
+def convertQueryToList(somestring):
     global queries_list
     queries_list = list()
     for queries in somestring.split(" "):
@@ -307,7 +307,7 @@ if __name__ == '__main__':
     flag = True
     while(flag):
         queries_input = input('Enter your query here: ')
-        query_lst(queries_input)
+        convertQueryToList(queries_input)
         print(f'Queries are: {queries_list}')
         #print(json.dumps(inverted_index, indent=4))
         start2 = time.time()
