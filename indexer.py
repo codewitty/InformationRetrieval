@@ -206,28 +206,36 @@ def get_tfidf(q_list):
         tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
     return tf_dict
 
-def print_result():
     with open("tf-IDF.json") as f:
         data_c = (f.read())
     td = json.loads(data_c)
+    result =0
     all_q ={}
     q_count = 0
-    print("Ranked by tf-idf")
-    querry=""
+    
     for q in td:
-        querry += q + " "
         if q.lower() != "and":
             q_count +=1
-    print(querry)
+    
     for q in td:
         for k,v in td[q].items():
              if k not in all_q:
-                 all_q[k] = [v[0], 1]
+                 print(v[1])
+                 all_q[k] = [v[0],v[1], 1]
              else:
-                 all_q[k][1] +=1    
-    for k,v in all_q.items():
-        if v[1] == q_count:
+                 all_q[k][2] +=1
+                 if(all_q[k][1]> v[1]):
+                     all_q[k][1] = v[1]
+                 
+                 
+    for k,v in dict(sorted(all_q.items(),key=lambda item: item[1][1],reverse=True)).items():
+        if v[2] == q_count:
+            result +=1
             print(f"url: {k}, docID: {v[0]}")
+            
+    if(result == 0):
+        print("No match found")
+        return
 
 def writeToDisk(index, count = 100, filenames = 'output_indexes/output'):
     filename = filenames + str(count) + ".json"
