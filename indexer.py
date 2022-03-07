@@ -22,6 +22,7 @@ error_list = []
 total_word = {}
 doc_id = {}
 token_count ={}
+tf_dict ={}
 
 def checkEnglish(str):
     try:
@@ -179,7 +180,6 @@ def get_idf(token):
     return idf
     
 def get_tfidf(q_list):
-    tf_dict ={}
     for token in q_list:
         tfidf = {}
         #doc_id = 0
@@ -189,9 +189,17 @@ def get_tfidf(q_list):
                 tf = tc / total_word[url] #num of token found / #total word count
                 tfidf[url] = (doc_id[url], tf * get_idf(token))
         tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
+        
+    with open ("tf-IDF.json", "w") as outfile:
+        json_object = json.dumps(tf_dict, indent=4, sort_keys=False)
+        outfile.write(json_object)
+        print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
     return tf_dict
 
-def print_result(td):
+def print_result():
+    with open("tf-IDF.json") as f:
+        data_c = (f.read())
+    td = json.loads(data_c)
     all_q ={}
     q_count = 0
     print("Ranked by tf-idf")
@@ -312,7 +320,8 @@ if __name__ == '__main__':
         #print(json.dumps(inverted_index, indent=4))
         start2 = time.time()
         search(queries_list, query_directory)
-        print_result(get_tfidf(queries_list))
+        get_tfidf(queries_list)
+        print_result()
         # Time measurement
         end2 = time.time()
         mins = ((end2 - start2)/60) * 1000
