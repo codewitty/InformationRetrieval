@@ -144,8 +144,17 @@ def buildIndex(directory):
 def convertQueryToList(somestring):
     global queries_list
     queries_list = list()
-    for queries in somestring.split(" "):
-            queries_list.append(queries.strip())
+    s_list = somestring.split(" ")
+    string = ""
+    for q in range(len(s_list)):
+        if(s_list[q].lower() == "and"):
+            queries_list.append(string.strip())
+            string = ""
+        elif(q == len(s_list)-1):
+            string += s_list[q]
+            queries_list.append(string.strip())
+        else:
+            string += s_list[q] + " "
 
 def search(query, someList, output_dir):
     postings_list = []
