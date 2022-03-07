@@ -175,7 +175,7 @@ def get_tfidf(q_list):
     for token in q_list:
         tfidf = {}
         #doc_id = 0
-        if token in inverted_index.keys():
+        if token in inverted_index.keys() and token.lower() != "and":
             for url in inverted_index[token]:
                 tc = token_count[url][token]#the number of token found in that url
                 tf = tc / total_word[url] #num of token found / #total word count
@@ -184,10 +184,23 @@ def get_tfidf(q_list):
     return tf_dict
 
 def print_result(td):
+    all_q ={}
+    q_count = 0
     print("Ranked by tf-idf")
+    querry=""
     for q in td:
-        print(f"Query: {q}")
+        querry += q + " "
+        if q.lower() != "and":
+            q_count +=1
+    print(querry)
+    for q in td:
         for k,v in td[q].items():
+             if k not in all_q:
+                 all_q[k] = [v[0], 1]
+             else:
+                 all_q[k][1] +=1    
+    for k,v in all_q.items():
+        if v[1] == q_count:
             print(f"url: {k}, docID: {v[0]}")
 
 def writeToDisk(index):
