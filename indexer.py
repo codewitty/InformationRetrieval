@@ -270,7 +270,6 @@ def splitIndex(index, chunks=50):
 
 if __name__ == '__main__':
     query_directory = "/Users/joshuagomes/InformationRetrieval/query_indexes"
-    """
     directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     #directory = '/Users/joshuagomes/InformationRetrieval/DDev'
     start = time.time()
@@ -319,7 +318,6 @@ if __name__ == '__main__':
     with open("inverted_index_final.json") as f:
         data_c = (f.read())
     inverted_index = json.loads(data_c)
-    """
 
     #Querying the DB
     flag = True
