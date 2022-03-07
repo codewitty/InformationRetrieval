@@ -140,20 +140,21 @@ def buildIndex(directory):
         elif os.path.isdir(f):
             buildIndex(f) 
 
-# Convert all queries from the input into a list, store AND bool queries in a set
-# then append into the list
+# Convert all queries from the input into a list 
 def convertQueryToList(somestring):
     global queries_list
     queries_list = list()
     for queries in somestring.split(" "):
             queries_list.append(queries.strip())
 
-def search(someList, output_dir):
+def search(query, someList, output_dir):
     postings_list = []
     p = SnowballStemmer("english")
+    # Remove duplicates
+    someList = list(set(someList))
     for element in someList:
         element_l = element.lower()
-        #element_l = p.stem(element_l)
+        element_l = p.stem(element_l)
         flag = False
         for filename in os.listdir(output_dir):
             f = os.path.join(output_dir, filename)
@@ -162,17 +163,31 @@ def search(someList, output_dir):
             temp_index = json.loads(data_c)
             if element_l in temp_index.keys():
                 posting = temp_index[element_l]
-                print(f'Keyword {element} was stemmed into {element_l} found in these pages:{posting}')
+                #print(f'Keyword {element} was stemmed into {element_l} found in these pages:{posting}')
                 posting.pop(0)
                 postings_list.append(set(posting))
                 flag = True
+        '''
         if not flag:
             print(f'Search Query {element} not found')
+        '''
+
+    repeats = "~~~~~~~~~" * 20
+    print(f'Posting List: {postings_list}')
     if len(postings_list) > 1:
         intersection = set.intersection(*postings_list)
         #print(postings_list[0].intersection(*postings_list))
-        print(f'Intersection List: {intersection}')
-
+        print(f'{repeats}')
+        if len(intersection) > 0:
+            print(f'Search query {query} found in {len(intersection)} pages: {intersection}')
+        else:
+            print(f'Search Query: {query} NOT FOUND')
+        print(f'{repeats}')
+    elif len(postings_list) == 1:
+        print(f'{repeats}')
+        print(f'Search query {query} found in the following pages: {postings_list}')
+        print(f'{repeats}')
+        
 def get_idf(token):
     t = len(inverted_index[token]) # number of files contains the token
     df = t/count
@@ -189,11 +204,6 @@ def get_tfidf(q_list):
                 tf = tc / total_word[url] #num of token found / #total word count
                 tfidf[url] = (doc_id[url], tf * get_idf(token))
         tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
-        
-    with open ("tf-IDF.json", "w") as outfile:
-        json_object = json.dumps(tf_dict, indent=4, sort_keys=False)
-        outfile.write(json_object)
-        print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')
     return tf_dict
 
 def print_result():
@@ -319,9 +329,8 @@ if __name__ == '__main__':
         print(f'Queries are: {queries_list}')
         #print(json.dumps(inverted_index, indent=4))
         start2 = time.time()
-        search(queries_list, query_directory)
-        get_tfidf(queries_list)
-        print_result()
+        search(queries_input, queries_list, query_directory)
+        print_result(get_tfidf(queries_list))
         # Time measurement
         end2 = time.time()
         mins = ((end2 - start2)/60) * 1000
