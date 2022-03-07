@@ -1,3 +1,4 @@
+import ijson
 import json
 import re
 import os
@@ -99,7 +100,7 @@ def getContent(filename):
     count += 1
     print(count)
     if count % 10000 == 0:
-        writeToDisk(inverted_index)
+        writeToDisk(inverted_index, count)
         inverted_index = {}
 
 def getContent_nonUni(filename):
@@ -146,18 +147,25 @@ def query_lst(somestring):
     for queries in somestring.split(" "):
             queries_list.append(queries.strip())
 
-def search(someList):
+def search(someList, output_dir):
     postings_list = []
     p = SnowballStemmer("english")
     for element in someList:
         element_l = element.lower()
         #element_l = p.stem(element_l)
-        if element_l in inverted_index.keys():
-            posting = inverted_index[element_l]
-            print(f'Keyword {element} was stemmed into {element_l} found in these pages:{posting}')
-            posting.pop(0)
-            postings_list.append(set(posting))
-        else:
+        flag = False
+        for filename in os.listdir(output_dir):
+            f = os.path.join(output_dir, filename)
+            with open(f) as index_file:
+                data_c = (index_file.read())
+            temp_index = json.loads(data_c)
+            if element_l in temp_index.keys():
+                posting = temp_index[element_l]
+                print(f'Keyword {element} was stemmed into {element_l} found in these pages:{posting}')
+                posting.pop(0)
+                postings_list.append(set(posting))
+                flag = True
+        if not flag:
             print(f'Search Query {element} not found')
     if len(postings_list) > 1:
         intersection = set.intersection(*postings_list)
@@ -203,9 +211,8 @@ def print_result(td):
         if v[1] == q_count:
             print(f"url: {k}, docID: {v[0]}")
 
-def writeToDisk(index):
-    global count
-    filename = "output_indexes/output" + str(count) + ".json"
+def writeToDisk(index, count = 100, filenames = 'output_indexes/output'):
+    filename = filenames + str(count) + ".json"
     with open (filename, "w") as outfile:
         json_object = json.dumps(index, indent=4, sort_keys=True)
         outfile.write(json_object)
@@ -223,32 +230,41 @@ def mergeIndexes(output_dir):
         for posting in temp_index.keys():
             if posting in inverted_index.keys():
                 temp_list  = temp_index[posting]
+                temp_list.pop(0)
                 for page in temp_list:
                     if page not in inverted_index[posting]:
                         inverted_index[posting].append(page)
                         inverted_index[posting][0] += 1
             else:
                 inverted_index[posting] = temp_index[posting]
-    #os.rmdir(output_dir)
+
+def splitIndex(index, chunks=50):
+    "Return list of split indexes"
+    return_list = [dict() for idx in range(chunks)]
+    idx = 0
+    for k,v in index.items():
+        return_list[idx][k] = v
+        if idx < chunks-1:  # indexes start at 0
+            idx += 1
+        else:
+            idx = 0
+    return return_list
 
 if __name__ == '__main__':
+    query_directory = "/Users/joshuagomes/InformationRetrieval/query_indexes"
+    """
+    directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     #directory = '/Users/joshuagomes/InformationRetrieval/DDev'
-    directory = '/Users/joshuagomes/InformationRetrieval/Dev'
-    #directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
-    archive = "output.zip"
     start = time.time()
     output_directory = "/Users/joshuagomes/InformationRetrieval/output_indexes"
     output_check = Path(output_directory)
+    query_check = Path(query_directory)
     if not output_check.exists():
         os.mkdir(output_directory)
+    if not query_check.exists():
+        os.mkdir(query_directory)
     output_index = 'inverted_index_final.json'
     buildIndex(directory)
-    # Time measurement
-    end = time.time()
-    mins = (end - start)/60
-    print(f'Start Time: {start}')
-    print(f'End Time: {end}')
-    print(f'Time taken: {mins}')
 
     # Merge all Indexes
     mergeIndexes(output_directory)
@@ -257,6 +273,23 @@ if __name__ == '__main__':
     with open (output_index, "w") as outfile:
         json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
         outfile.write(json_object)
+
+    split_indexes = splitIndex(inverted_index, 100)
+
+    dict_count = 1
+
+    query_subdirectory = query_directory + '/query_dict'
+
+    for index in split_indexes:
+        writeToDisk(index, dict_count, query_subdirectory)
+        dict_count+=1
+
+    # Time measurement
+    end = time.time()
+    mins = (end - start)/60
+    print(f'Start Time: {start}')
+    print(f'End Time: {end}')
+    print(f'Time taken: {mins}')
 
     # Sanity checks
     print(f'Number of tokens: {len(inverted_index)}')
@@ -267,17 +300,24 @@ if __name__ == '__main__':
 
     with open("inverted_index_final.json") as f:
         data_c = (f.read())
-    index2 = json.loads(data_c)
-    print(f'Number of tokens Merged Index: {len(index2)}')
-
-"""
-    #Querying the DB
-    queries_input = input('Enter your query here: ')
-    query_lst(queries_input)
-    print(f'Queries are: {queries_list}')
     inverted_index = json.loads(data_c)
-    print(json.dumps(inverted_index, indent=4))
-    buildIndex(directory)
-    search(queries_list)
-    print_result(get_tfidf(queries_list))
-"""
+    """
+
+    #Querying the DB
+    flag = True
+    while(flag):
+        queries_input = input('Enter your query here: ')
+        query_lst(queries_input)
+        print(f'Queries are: {queries_list}')
+        #print(json.dumps(inverted_index, indent=4))
+        start2 = time.time()
+        search(queries_list, query_directory)
+        print_result(get_tfidf(queries_list))
+        # Time measurement
+        end2 = time.time()
+        mins = ((end2 - start2)/60) * 1000
+        print(f'Time taken for query: {mins} ms')
+        response = input("Would you like to search again. Type any key for yes or n/N for no\n")
+        if response.lower() == "n":
+            flag = False
+            print(f'Thank you for using this search engine. Goodbye!')
