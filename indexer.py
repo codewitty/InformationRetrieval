@@ -220,8 +220,8 @@ def mergeIndexes(output_dir):
 
 if __name__ == '__main__':
     #directory = '/Users/joshuagomes/InformationRetrieval/DDev'
-    #directory = '/Users/joshuagomes/InformationRetrieval/Dev'
-    directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
+    directory = '/Users/joshuagomes/InformationRetrieval/Dev'
+    #directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     archive = "output.zip"
     start = time.time()
     output_directory = "/Users/joshuagomes/InformationRetrieval/output_indexes"
@@ -229,7 +229,6 @@ if __name__ == '__main__':
     if not output_check.exists():
         os.mkdir(output_directory)
     output_index = 'inverted_index_final.json'
-    output_index_nm = 'inverted_index_final_nomerge.json'
     buildIndex(directory)
     # Time measurement
     end = time.time()
@@ -252,11 +251,6 @@ if __name__ == '__main__':
     print(f'Invalid Pages: {invalid_pages}')
     print(f'JSON error Pages: {json_error_pages}')
     print(f'Etree Error Pages: {error_list}')
-
-    with open("inverted_index_final_nomerge.json") as f:
-        data_c = (f.read())
-    index1 = json.loads(data_c)
-    print(f'Number of tokens Unmerged Index: {len(index1)}')
 
     with open("inverted_index_final.json") as f:
         data_c = (f.read())
