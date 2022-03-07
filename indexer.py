@@ -82,11 +82,11 @@ def getContent(filename):
     total_word[url] = len(text_tokens)
     token_count[url] ={}
     for token in text_tokens:
-        if token in inverted_index.keys():
-            if token in token_count[url].keys():
-                token_count[url][token] += 1
-            else:
-                token_count[url][token]  = 1
+        
+        if token in token_count[url].keys():
+            token_count[url][token] += 1
+        else:
+            token_count[url][token]  = 1
         if token in inverted_index.keys() and url not in inverted_index[token]:
             inverted_index[token][0] += 1
             inverted_index[token].append(url)
