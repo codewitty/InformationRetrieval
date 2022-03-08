@@ -204,8 +204,13 @@ def get_tfidf(q_list):
                 tf = tc / total_word[url] #num of token found / #total word count
                 tfidf[url] = (doc_id[url], tf * get_idf(token))
         tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
+    with open ("tf-IDF.json", "w") as outfile:
+        json_object = json.dumps(tfidf_dictionary, indent=4, sort_keys=True)
+        outfile.write(json_object)
+        print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')   
     return tf_dict
 
+def print_result():
     with open("tf-IDF.json") as f:
         data_c = (f.read())
     td = json.loads(data_c)
