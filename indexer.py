@@ -205,7 +205,7 @@ def get_tfidf(q_list):
                 tfidf[url] = (doc_id[url], tf * get_idf(token))
         tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
     with open ("tf-IDF.json", "w") as outfile:
-        json_object = json.dumps(tfidf_dictionary, indent=4, sort_keys=True)
+        json_object = json.dumps(tf_dict, indent=4, sort_keys=True)
         outfile.write(json_object)
         print(f'Size of jSON Data Structure: {str((json_object.__sizeof__()))}')   
     return tf_dict
