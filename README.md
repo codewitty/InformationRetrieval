@@ -29,4 +29,4 @@ EXECUTION
 To execute the search engine execute the script indexer.py from the command line as follows:
 ```python3 indexer.py directory output_directory query_directory```
 
-The function builds the inverted_index and then asks the user to input their search term.
+The function builds the inverted_index and displays the count of documents as a visual feedback for the user. Once the index is built, the program asks the user to input their search term and delivers the results to the user.
