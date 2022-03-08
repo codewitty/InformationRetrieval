@@ -276,11 +276,14 @@ def splitIndex(index, chunks=50):
     return return_list
 
 if __name__ == '__main__':
-    query_directory = "/Users/joshuagomes/InformationRetrieval/query_indexes"
-    directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
+    #directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
+    directory = sys.argv[1]
+    query_directory = sys.argv[2]
+    output_directory = sys.argv[3]
+    #output_directory = "/Users/joshuagomes/InformationRetrieval/output_indexes"
+    #query_directory = "/Users/joshuagomes/InformationRetrieval/query_indexes"
     #directory = '/Users/joshuagomes/InformationRetrieval/DDev'
     start = time.time()
-    output_directory = "/Users/joshuagomes/InformationRetrieval/output_indexes"
     output_check = Path(output_directory)
     query_check = Path(query_directory)
     if not output_check.exists():
