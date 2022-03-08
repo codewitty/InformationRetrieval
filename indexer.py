@@ -1,7 +1,6 @@
-import ijson
 import json
 import re
-import os
+import os, sys
 import os.path
 from pathlib import Path
 import tokenizer
@@ -21,7 +20,7 @@ json_error_pages = []
 error_list = []
 total_word = {}
 doc_id = {}
-token_count ={}
+token_count = {}
 tf_dict ={}
 
 def checkEnglish(str):
@@ -148,6 +147,7 @@ def convertQueryToList(somestring):
             queries_list.append(queries.strip())
 
 def search(query, someList, output_dir):
+    global count
     postings_list = []
     p = SnowballStemmer("english")
     # Remove duplicates
@@ -156,6 +156,7 @@ def search(query, someList, output_dir):
         element_l = element.lower()
         element_l = p.stem(element_l)
         flag = False
+
         for filename in os.listdir(output_dir):
             f = os.path.join(output_dir, filename)
             with open(f) as index_file:
@@ -165,74 +166,78 @@ def search(query, someList, output_dir):
                 posting = temp_index[element_l]
                 #print(f'Keyword {element} was stemmed into {element_l} found in these pages:{posting}')
                 posting.pop(0)
-                postings_list.append(set(posting))
-                flag = True
+                for posting in list(set(posting)):
+                    postings_list.append(posting)
+                print(type(postings_list))
+                print(len(postings_list))
+                break
         '''
         if not flag:
             print(f'Search Query {element} not found')
+
+    if len(postings_list) > 1:
+        t = len(postings_list) # number of files contains the token
+        df = t/count
+        idf = math.log(count/(df+1))
+        for token in someList:
+            token = token.lower() 
+            print(token)
+            tfidf = {}
+            #doc_id = 0
+            for url in postings_list:
+                #tc = token_count[url][token]#the number of token found in that url
+                #tf = tc / total_word[url] #num of token found / #total word count
+                #tfidf[url] = (doc_id[url], tf * idf)
+            #tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
+        result = 0
+        all_q = {}
+        q_count = 0
+
+        for q in someList:
+            if q.lower() != "and":
+                q_count +=1
+
+        for q in someList:
+            for k,v in someList[q].items():
+                 if k not in all_q:
+                     all_q[k] = [v[0],v[1], 1]
+                 else:
+                     all_q[k][2] +=1
+                     if all_q[k][1]> v[1]:
+                         all_q[k][1] = v[1]
+
+
+        for k,v in dict(sorted(all_q.items(),key=lambda item: item[1][1],reverse=True)).items():
+            if v[2] == q_count:
+                result +=1
+                print(f"RANKED RESULTS")
+                print(f"url: {k}, docID: {v[0]}")
+
+        if(result == 0):
+            print("No match found")
+            return
         '''
 
     repeats = "~~~~~~~~~" * 20
-    print(f'Posting List: {postings_list}')
-    if len(postings_list) > 1:
+    if len(someList) > 1:
         intersection = set.intersection(*postings_list)
         #print(postings_list[0].intersection(*postings_list))
         print(f'{repeats}')
         if len(intersection) > 0:
+            print(f"RANKED RESULTS")
             print(f'Search query {query} found in {len(intersection)} pages: {intersection}')
         else:
             print(f'Search Query: {query} NOT FOUND')
         print(f'{repeats}')
-    elif len(postings_list) == 1:
+    elif len(someList) == 1 and len(postings_list) > 1:
         print(f'{repeats}')
-        print(f'Search query {query} found in the following pages: {postings_list}')
+        print(f"RANKED RESULTS")
+        print(f'Search query {query} found in {len(postings_list)} pages:')
+        print(*postings_list, sep = "\n")
         print(f'{repeats}')
+    else:
+        print(f'NO RESULTS FOUND')
         
-def get_idf(token):
-    t = len(inverted_index[token]) # number of files contains the token
-    df = t/count
-    idf = math.log(count/(df+1))
-    return idf
-    
-def get_tfidf(q_list):
-    for token in q_list:
-        tfidf = {}
-        #doc_id = 0
-        if token in inverted_index.keys() and token.lower() != "and":
-            for url in inverted_index[token]:
-                tc = token_count[url][token]#the number of token found in that url
-                tf = tc / total_word[url] #num of token found / #total word count
-                tfidf[url] = (doc_id[url], tf * get_idf(token))
-        tf_dict[token] = dict(sorted(tfidf.items(), key=lambda item: item[1][1],reverse=True))
-    return tf_dict
-
-def print_result(td):
-    result =0
-    all_q ={}
-    q_count = 0
-    
-    for q in td:
-        if q.lower() != "and":
-            q_count +=1
-    
-    for q in td:
-        for k,v in td[q].items():
-             if k not in all_q:
-                 all_q[k] = [v[0],v[1], 1]
-             else:
-                 all_q[k][2] +=1
-                 if all_q[k][1]> v[1]:
-                     all_q[k][1] = v[1]
-                 
-                 
-    for k,v in dict(sorted(all_q.items(),key=lambda item: item[1][1],reverse=True)).items():
-        if v[2] == q_count:
-            result +=1
-            print(f"url: {k}, docID: {v[0]}")
-            
-    if(result == 0):
-        print("No match found")
-        return
 
 def writeToDisk(index, count = 100, filenames = 'output_indexes/output'):
     filename = filenames + str(count) + ".json"
@@ -242,13 +247,11 @@ def writeToDisk(index, count = 100, filenames = 'output_indexes/output'):
 
 def mergeIndexes(output_dir):
     global inverted_index
-    print(f'Length of original index before starting = {len(inverted_index)}')
     for filename in os.listdir(output_dir):
         f = os.path.join(output_dir, filename)
         with open(f) as index_file:
             data_c = (index_file.read())
             temp_index = json.loads(data_c)
-            print(f'Length of index from {filename} = {len(temp_index)}')
 
         for posting in temp_index.keys():
             if posting in inverted_index.keys():
@@ -274,30 +277,43 @@ def splitIndex(index, chunks=50):
     return return_list
 
 if __name__ == '__main__':
-    #directory = '/Users/joshuagomes/InformationRetrieval/DEV_Final'
     directory = sys.argv[1]
     query_directory = sys.argv[2]
     output_directory = sys.argv[3]
-    #output_directory = "/Users/joshuagomes/InformationRetrieval/output_indexes"
-    #query_directory = "/Users/joshuagomes/InformationRetrieval/query_indexes"
-    #directory = '/Users/joshuagomes/InformationRetrieval/DDev'
+    tf_directory = sys.argv[4]
+    total_word_file = tf_directory + '/total_word.json'
+    doc_id_file = tf_directory + '/doc_id.json'
+    token_count_file = tf_directory + '/token_count.json'
+    """
     start = time.time()
     output_check = Path(output_directory)
     query_check = Path(query_directory)
+    tf_check = Path(tf_directory)
     if not output_check.exists():
         os.mkdir(output_directory)
     if not query_check.exists():
         os.mkdir(query_directory)
+    if not tf_check.exists():
+        os.mkdir(tf_directory)
     output_index = 'inverted_index_final.json'
     buildIndex(directory)
 
     # Merge all Indexes
     mergeIndexes(output_directory)
     
-    # Write final merged index to disk:
-    with open (output_index, "w") as outfile:
-        json_object = json.dumps(inverted_index, indent=4, sort_keys=True)
+    # Write final tf index to disk:
+    with open (total_word_file, "w") as outfile:
+        json_object = json.dumps(total_word, indent=4, sort_keys=True)
         outfile.write(json_object)
+
+    with open (doc_id_file, "w") as outfile:
+        json_object = json.dumps(doc_id, indent=4, sort_keys=True)
+        outfile.write(json_object)
+
+    with open (token_count_file, "w") as outfile:
+        json_object = json.dumps(token_count, indent=4, sort_keys=True)
+        outfile.write(json_object)
+
 
     split_indexes = splitIndex(inverted_index, 100)
 
@@ -315,28 +331,37 @@ if __name__ == '__main__':
     print(f'Start Time: {start}')
     print(f'End Time: {end}')
     print(f'Time taken: {mins}')
-
-    # Sanity checks
-    print(f'Number of tokens: {len(inverted_index)}')
-    print(f'Number of documents: {count}')
-    print(f'Invalid Pages: {invalid_pages}')
-    print(f'JSON error Pages: {json_error_pages}')
-    print(f'Etree Error Pages: {error_list}')
-
-    with open("inverted_index_final.json") as f:
-        data_c = (f.read())
-    inverted_index = json.loads(data_c)
+    """
 
     #Querying the DB
     flag = True
     while(flag):
         queries_input = input('Enter your query here: ')
         convertQueryToList(queries_input)
+        # Load the tf indexes
+
+        with open(total_word_file) as index_file:
+            data_c = (index_file.read())
+        total_word = json.loads(data_c)
+
+        with open(doc_id_file) as index_file:
+            data_c = (index_file.read())
+        doc_id = json.loads(data_c)
+
+        with open(token_count_file) as index_file:
+            data_c = (index_file.read())
+        token_count = json.loads(data_c)
+
         print(f'Queries are: {queries_list}')
-        #print(json.dumps(inverted_index, indent=4))
         start2 = time.time()
+        for filename in os.listdir(query_directory):
+            f = os.path.join(query_directory, filename)
+            with open(f) as index_file:
+                data_c = (index_file.read())
+            temp_index = json.loads(data_c)
+            count += len(temp_index)
+        print(f'~~~~~~~~~Global Count = {count}~~~~~~~~~~~~')
         search(queries_input, queries_list, query_directory)
-        print_result(get_tfidf(queries_list))
         # Time measurement
         end2 = time.time()
         mins = ((end2 - start2)/60) * 1000
