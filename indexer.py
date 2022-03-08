@@ -221,7 +221,7 @@ def print_result(td):
                  all_q[k] = [v[0],v[1], 1]
              else:
                  all_q[k][2] +=1
-                 ifall_q[k][1]> v[1]:
+                 if all_q[k][1]> v[1]:
                      all_q[k][1] = v[1]
                  
                  
