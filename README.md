@@ -1,6 +1,6 @@
 ABOUT
 -------------------------
-This is the base implementation of a full search engine.
+This is an implementation of a full search engine.
 
 
 USAGE
