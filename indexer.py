@@ -220,11 +220,10 @@ def get_tfidf(q_list):
     for q in td:
         for k,v in td[q].items():
              if k not in all_q:
-                 print(v[1])
                  all_q[k] = [v[0],v[1], 1]
              else:
                  all_q[k][2] +=1
-                 if(all_q[k][1]> v[1]):
+                 ifall_q[k][1]> v[1]:
                      all_q[k][1] = v[1]
                  
                  
